@@ -99,9 +99,10 @@ func isPortOpen80(domain string) (bool, error) {
 		fmt.Printf("%s is up (%s)\n", domain, ipAddr[0])
 		return true, nil
 
+	} else {
+		fmt.Println(color.Colorize(color.Red, "[-] Domain not Resolved"))
+		return false, err
 	}
-
-	return false, err
 }
 func isPortOpen443(domain string) (bool, error) {
 
