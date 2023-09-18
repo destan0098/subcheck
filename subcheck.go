@@ -54,7 +54,7 @@ func main() {
 				CDNname: CDNname,
 			}
 			if result.Port80 || port443 {
-				fmt.Printf("Domain %s is Opened\n", result.Domain)
+				fmt.Printf(color.Colorize(color.Green, "[+] Domain %s is Opened\n"), result.Domain)
 				results = append(results, result)
 			}
 		}(domain)
@@ -93,10 +93,10 @@ func isPortOpen80(domain string) (bool, error) {
 		ipAddr, err := net.LookupIP(domain)
 
 		if err != nil {
-			fmt.Printf("%s is down\n", domain)
+			fmt.Printf(color.Colorize(color.Red, "[-] %s is down\n"), domain)
 			return false, err
 		}
-		fmt.Printf("%s is up (%s)\n", domain, ipAddr[0])
+		fmt.Printf(color.Colorize(color.Green, "[+] %s is up (%s)\n"), domain, ipAddr[0])
 		return true, nil
 
 	} else {
@@ -112,10 +112,10 @@ func isPortOpen443(domain string) (bool, error) {
 		ipAddr, err := net.LookupIP(domain)
 
 		if err != nil {
-			fmt.Printf("%s is down\n", domain)
+			fmt.Printf(color.Colorize(color.Red, "[-] %s is down\n"), domain)
 			return false, err
 		}
-		fmt.Printf("%s is up (%s)\n", domain, ipAddr[0])
+		fmt.Printf(color.Colorize(color.Green, "[+] %s is up (%s)\n"), domain, ipAddr[0])
 		return true, nil
 
 	} else {
