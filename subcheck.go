@@ -23,7 +23,7 @@ type DomainResult struct {
 }
 
 func main() {
-	fmt.Printf(`Example Of Use : Subcheck.go -i 'C:\Users\Asus\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\Asus\Desktop\go2\checksubdomains\result4.csv'`)
+	fmt.Printf(`Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`)
 	//This line Give Argumans From Users
 	inputfile := flag.String("i", "input.txt", "Input txt File")
 	outputfile := flag.String("o", "result.csv", "Output CSV File")
