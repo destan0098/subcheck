@@ -24,7 +24,7 @@ type DomainResult struct {
 }
 
 func main() {
-	fmt.Printf(`Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`)
+	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`))
 	fmt.Println(color.Colorize(color.Red, "[*] This tool is for training."))
 	//This line Give Argumans From Users
 	inputfile := flag.String("i", "input.txt", "Input txt File")
