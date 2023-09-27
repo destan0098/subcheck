@@ -32,7 +32,7 @@ git clone https://github.com/destan0098/subcheck.git
 
 To Run Enter Below Code
 For Use This Enter Website without http  In Input File
-Like : https://google.com
+Like : google.com
 
 ```
 subcheck -l 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'
