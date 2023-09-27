@@ -31,7 +31,7 @@ git clone https://github.com/destan0098/subcheck.git
 ## Usage
 
 To Run Enter Below Code
-For Use This Enter Website Full Address In Input File
+For Use This Enter Website without http  In Input File
 Like : https://google.com
 
 ```
