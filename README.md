@@ -52,7 +52,7 @@ cat inputfile.txt | subcheck -pipe -o output.csv
 
 ## ScreenShot
 
-![IP Show](/screenshot.png?raw=true "IP Show")
+![IP Show](/screenShot.png?raw=true "Subcheck")
 
 
 ## Features
