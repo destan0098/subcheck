@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"github.com/TwiN/go-color"
 	"github.com/projectdiscovery/cdncheck"
+	"log"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -26,22 +28,82 @@ type DomainResult struct {
 	WAFname   string
 }
 
-func main() {
-	// Print usage example and information about the tool.
-	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`) + "\n")
-	fmt.Println(color.Colorize(color.Red, "[*] This tool is for training."))
-
-	// Parse command-line flags for input and output file paths.
-	inputfile := flag.String("i", "input.txt", "Input txt File")
-	outputfile := flag.String("o", "result.csv", "Output CSV File")
-	flag.Parse()
-
-	// Read domain list from the specified text file.
-	domains := readDomains(*inputfile)
-
-	var wg sync.WaitGroup
+func withpip() []DomainResult {
+	scanner := bufio.NewScanner(os.Stdin)
 	var results []DomainResult
+	for scanner.Scan() {
 
+		domain := scanner.Text()
+
+		// Check if port 80 is open for the domain.
+		port80, err80 := isPortOpen80(domain)
+
+		// Check if port 443 is open for the domain.
+		port443, err443 := isPortOpen443(domain)
+
+		// Check if the domain is on a CDN.
+		isCDNs, CDNname := isCDN(domain)
+		isClouds, CloudName := isCloud(domain)
+		isWAFs, WAFname := isWaf(domain)
+
+		result := DomainResult{
+			Domain:    domain,
+			Port80:    port80 && err80 == nil,
+			Port443:   port443 && err443 == nil,
+			IsCDN:     isCDNs,
+			CDNname:   CDNname,
+			isCloud:   isClouds,
+			CloudName: CloudName,
+			isWAF:     isWAFs,
+			WAFname:   WAFname,
+		}
+
+		// If port 80 or 443 is open, print a message and store the result.
+		if result.Port80 || port443 {
+			fmt.Printf(color.Colorize(color.Green, "[+] Domain %s is Opened\n"), result.Domain)
+			results = append(results, result)
+		}
+
+	}
+
+	return results
+}
+func withname(domain string) {
+
+	port80, err80 := isPortOpen80(domain)
+
+	// Check if port 443 is open for the domain.
+	port443, err443 := isPortOpen443(domain)
+
+	// Check if the domain is on a CDN.
+	isCDNs, CDNname := isCDN(domain)
+	isClouds, CloudName := isCloud(domain)
+	isWAFs, WAFname := isWaf(domain)
+
+	result := DomainResult{
+		Domain:    domain,
+		Port80:    port80 && err80 == nil,
+		Port443:   port443 && err443 == nil,
+		IsCDN:     isCDNs,
+		CDNname:   CDNname,
+		isCloud:   isClouds,
+		CloudName: CloudName,
+		isWAF:     isWAFs,
+		WAFname:   WAFname,
+	}
+
+	// If port 80 or 443 is open, print a message and store the result.
+	if result.Port80 || port443 {
+		fmt.Printf(color.Colorize(color.Green, "[+] Domain %s is Opened\n"), result.Domain)
+		fmt.Printf(color.Colorize(color.Green, "[*] In single-domain mode, the output file is not saved.\n"))
+	} else {
+		fmt.Printf(color.Colorize(color.Red, "[+] Domain %s is Closed\n"), result.Domain)
+		fmt.Printf(color.Colorize(color.Green, "[*] In single-domain mode, the output file is not saved.\n"))
+	}
+}
+func withlist(inputfile string, wg sync.WaitGroup) []DomainResult {
+	domains := readDomains(inputfile)
+	var results []DomainResult
 	for _, domain := range domains {
 		wg.Add(1)
 		go func(domain string) {
@@ -79,7 +141,38 @@ func main() {
 	}
 
 	wg.Wait()
+	return results
+}
 
+func main() {
+	// Print usage example and information about the tool.
+	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`) + "\n")
+	fmt.Println(color.Colorize(color.Red, "[*] This tool is for training."))
+
+	// Parse command-line flags for input and output file paths.
+	inputfile := flag.String("l", "", "Input txt File")
+	domainname := flag.String("d", "", "Input domain name")
+	pipeinsert := flag.Bool("pipe", false, "Input pipe method")
+	outputfile := flag.String("o", "result.csv", "Output CSV File")
+	flag.Parse()
+	if !strings.HasSuffix(*outputfile, ".csv") {
+		fmt.Println(color.Colorize(color.Red, "[*] You must Enter CSV file to Export"))
+		log.Panic("Error in output file ")
+	}
+	// Read domain list from the specified text file.
+
+	var wg sync.WaitGroup
+	var results []DomainResult
+	if *inputfile != "" {
+		results = withlist(*inputfile, wg)
+	} else if *domainname != "" {
+		withname(*domainname)
+	} else if *pipeinsert {
+		results = withpip()
+	} else {
+		fmt.Println(color.Colorize(color.Red, "[*] Please Enter input [*]"))
+		fmt.Println(color.Colorize(color.Red, "[*] For Example : subcheck -d google.com -o output.csv [*]"))
+	}
 	// Write the results to the specified output CSV file.
 	writeResults(results, *outputfile)
 }
