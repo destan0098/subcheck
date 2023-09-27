@@ -35,7 +35,14 @@ For Use This Enter Website Full Address In Input File
 Like : https://google.com
 
 ```
-subcheck -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'
+subcheck -l 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'
+
+```
+```
+subcheck -d google.com -o output.csv
+```
+```
+cat inputfile.txt | subcheck -pipe -o output.csv
 ```
 
 
