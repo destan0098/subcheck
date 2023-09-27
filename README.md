@@ -39,7 +39,7 @@ subcheck -l 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***
 
 ```
 ```
-subcheck -d google.com -o output.csv
+subcheck -d google.com 
 ```
 ```
 cat inputfile.txt | subcheck -pipe -o output.csv
