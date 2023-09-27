@@ -2,31 +2,33 @@ package main
 
 import (
 	"bufio"
-	"crypto/tls"
 	"encoding/csv"
 	"flag"
 	"fmt"
 	"github.com/TwiN/go-color"
+	"github.com/projectdiscovery/cdncheck"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
-	"time"
 )
 
 // DomainResult represents the result for a single domain, including port status and CDN information.
 type DomainResult struct {
-	Domain  string
-	Port80  bool
-	Port443 bool
-	IsCDN   bool
-	CDNname string
+	Domain    string
+	Port80    bool
+	Port443   bool
+	IsCDN     bool
+	CDNname   string
+	isCloud   bool
+	CloudName string
+	isWAF     bool
+	WAFname   string
 }
 
 func main() {
 	// Print usage example and information about the tool.
-	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`))
+	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`) + "\n")
 	fmt.Println(color.Colorize(color.Red, "[*] This tool is for training."))
 
 	// Parse command-line flags for input and output file paths.
@@ -52,14 +54,20 @@ func main() {
 			port443, err443 := isPortOpen443(domain)
 
 			// Check if the domain is on a CDN.
-			isCDNs, errCDN, CDNname := isCDN(domain)
+			isCDNs, CDNname := isCDN(domain)
+			isClouds, CloudName := isCloud(domain)
+			isWAFs, WAFname := isWaf(domain)
 
 			result := DomainResult{
-				Domain:  domain,
-				Port80:  port80 && err80 == nil,
-				Port443: port443 && err443 == nil,
-				IsCDN:   isCDNs && errCDN == nil,
-				CDNname: CDNname,
+				Domain:    domain,
+				Port80:    port80 && err80 == nil,
+				Port443:   port443 && err443 == nil,
+				IsCDN:     isCDNs,
+				CDNname:   CDNname,
+				isCloud:   isClouds,
+				CloudName: CloudName,
+				isWAF:     isWAFs,
+				WAFname:   WAFname,
 			}
 
 			// If port 80 or 443 is open, print a message and store the result.
@@ -83,7 +91,12 @@ func readDomains(filename string) []string {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
 
 	var domains []string
 	scanner := bufio.NewScanner(file)
@@ -139,30 +152,101 @@ func isPortOpen443(domain string) (bool, error) {
 	}
 }
 
-// isCDN checks if a domain is using a CDN by inspecting the HTTP response headers.
-func isCDN(domain string) (bool, error, string) {
+// isCDN checks if a domain is using a CDN by  IP Address.
+
+func isCDN(domain string) (bool, string) {
 	// This function checks for CDN presence based on specific headers in the HTTP response.
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Timeout: 2 * time.Second, Transport: tr}
-	resp, err := client.Get("http://" + domain)
+	ipAddr, err := net.LookupIP(domain)
 
 	if err != nil {
-		fmt.Println(err)
-		return false, err, "Not"
+		fmt.Printf(color.Colorize(color.Red, "[-] %s is down\n"), domain)
+		return false, ""
 	}
 
-	defer resp.Body.Close()
+	client := cdncheck.New()
+	ip := ipAddr[0]
 
-	cdnHeaders := []string{"Akamai", "Cloudflare", "Incapsula", "MaxCDN", "Fastly", "CDN77", "Amazon CloudFront", "KeyCDN"}
-	for _, header := range cdnHeaders {
-		if strings.Contains(resp.Header.Get("Server"), header) || strings.Contains(resp.Header.Get("X-Cache"), header) || strings.Contains(resp.Header.Get("Via"), header) {
-			// If the domain is on a CDN, return true and the CDN name.
-			return true, nil, header
-		}
+	// checks if an IP is contained in the cdn denylist
+	matched, val, err := client.CheckCDN(ip)
+	if err != nil {
+		panic(err)
 	}
-	return false, nil, "Not"
+
+	if matched {
+		fmt.Printf(color.Colorize(color.Green, "[+] %s On the CDN (%s)\n"), domain, val)
+		return matched, val
+
+	} else {
+		fmt.Printf(color.Colorize(color.Red, "[-] %s is Not in CDN\n"), domain)
+		return matched, val
+
+	}
+
+	return false, ""
+}
+
+// isCloud checks if a domain is using a Cloud by  IP Address.
+func isCloud(domain string) (bool, string) {
+	// This function checks for CDN presence based on specific headers in the HTTP response.
+	ipAddr, err := net.LookupIP(domain)
+
+	if err != nil {
+		fmt.Printf(color.Colorize(color.Red, "[-] %s is down\n"), domain)
+		return false, ""
+	}
+
+	client := cdncheck.New()
+	ip := ipAddr[0]
+
+	// checks if an IP is contained in the cloud denylist
+	matched, val, err := client.CheckCloud(ip)
+	if err != nil {
+		panic(err)
+	}
+
+	if matched {
+		fmt.Printf(color.Colorize(color.Green, "[+] %s On the Cloud (%s)\n"), domain, val)
+		return matched, val
+
+	} else {
+		fmt.Printf(color.Colorize(color.Red, "[-] %s is Not in Cloud\n"), domain)
+		return matched, val
+
+	}
+
+	return false, ""
+}
+
+// isWaf checks if a domain is using a Cloud by IP Address.
+
+func isWaf(domain string) (bool, string) {
+	// This function checks for CDN presence based on specific headers in the HTTP response.
+	ipAddr, err := net.LookupIP(domain)
+
+	if err != nil {
+		fmt.Printf(color.Colorize(color.Red, "[-] %s is down\n"), domain)
+		return false, ""
+	}
+
+	client := cdncheck.New()
+	ip := ipAddr[0]
+
+	// checks if an IP is contained in the waf denylist
+	matched, val, err := client.CheckWAF(ip)
+	if err != nil {
+		panic(err)
+	}
+
+	if matched {
+		fmt.Printf(color.Colorize(color.Green, "[+] %s Has Waf (%s)\n"), domain, val)
+		return matched, val
+
+	} else {
+		fmt.Printf(color.Colorize(color.Red, "[-] %s has not WAF\n"), domain)
+		return matched, val
+
+	}
+	return false, ""
 }
 
 // writeResults writes the results to the specified output CSV file.
@@ -171,12 +255,23 @@ func writeResults(results []DomainResult, outputfile string) {
 	if err != nil {
 		panic(err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
 	// Write the results to a CSV file.
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-	writer.Write([]string{"Domain", "Port 80", "Port 443", "Is CDN", "CDN Name"})
+	err = writer.Write([]string{"Domain", "Port 80", "Port 443", "Is CDN", "CDN Name", "Is Cloud", "Cloud name", "has Waf", "WAF name"})
+	if err != nil {
+		return
+	}
 	for _, result := range results {
-		writer.Write([]string{result.Domain, fmt.Sprintf("%v", result.Port80), fmt.Sprintf("%v", result.Port443), fmt.Sprintf("%v", result.IsCDN), fmt.Sprintf("%v", result.CDNname)})
+		err = writer.Write([]string{result.Domain, fmt.Sprintf("%v", result.Port80), fmt.Sprintf("%v", result.Port443), fmt.Sprintf("%v", result.IsCDN), fmt.Sprintf("%v", result.CDNname), fmt.Sprintf("%v", result.isCloud), fmt.Sprintf("%v", result.CloudName), fmt.Sprintf("%v", result.isWAF), fmt.Sprintf("%v", result.WAFname)})
+		if err != nil {
+			return
+		}
 	}
 }
