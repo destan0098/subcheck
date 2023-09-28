@@ -44,6 +44,24 @@ subcheck -d google.com
 ```
 cat inputfile.txt | subcheck -pipe -o output.csv
 ```
+```
+NAME:
+   subcheck - A new cli application
+
+USAGE:
+   subcheck [global options] command [command options] [arguments...]
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --domain value, -d value  Enter just one domain
+   --list value, -l value    Enter a list from text file
+   --pipe                    Enter just one domain (default: false)
+   --output value, -o value  Enter output csv file name   (default: "output.csv")
+   --help, -h                show help
+
+```
 
 
 

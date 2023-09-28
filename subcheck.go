@@ -3,15 +3,14 @@ package main
 import (
 	"bufio"
 	"encoding/csv"
-	"flag"
 	"fmt"
 	"github.com/TwiN/go-color"
 	"github.com/projectdiscovery/cdncheck"
+	"github.com/urfave/cli/v2"
 	"log"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -144,37 +143,75 @@ func withlist(inputfile string, wg sync.WaitGroup) []DomainResult {
 	return results
 }
 
+var outputs, inputs, domains string = "", "", ""
+var pipel int
+var wg sync.WaitGroup
+var results []DomainResult
+
 func main() {
 	// Print usage example and information about the tool.
-	fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`) + "\n")
+	//fmt.Printf(color.Colorize(color.Green, `Example Of Use : Subcheck.go -i 'C:\Users\**\Desktop\go2\checksubdomains\input.txt' -o 'C:\Users\***\Desktop\go2\checksubdomains\result4.csv'`) + "\n")
+	fmt.Println(`
+
+   _____           _        _____   _                     _    
+  / ____|         | |      / ____| | |                   | |   
+ | (___    _   _  | |__   | |      | |__     ___    ___  | | __
+  \___ \  | | | | | '_ \  | |      | '_ \   / _ \  / __| | |/ /
+  ____) | | |_| | | |_) | | |____  | | | | |  __/ | (__  |   < 
+ |_____/   \__,_| |_.__/   \_____| |_| |_|  \___|  \___| |_|\_\
+                                                               
+                                                               
+
+`)
 	fmt.Println(color.Colorize(color.Red, "[*] This tool is for training."))
+	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:        "domain",
+				Value:       "",
+				Aliases:     []string{"d"},
+				Usage:       "Enter just one domain",
+				Destination: &domains,
+			},
+			&cli.StringFlag{
+				Name:        "list",
+				Value:       "",
+				Aliases:     []string{"l"},
+				Usage:       "Enter a list from text file",
+				Destination: &inputs,
+			},
+			&cli.BoolFlag{
+				Name:  "pipe",
+				Usage: "Enter just one domain",
+				Count: &pipel,
+			},
 
-	// Parse command-line flags for input and output file paths.
-	inputfile := flag.String("l", "", "Input txt File")
-	domainname := flag.String("d", "", "Input domain name")
-	pipeinsert := flag.Bool("pipe", false, "Input pipe method")
-	outputfile := flag.String("o", "result.csv", "Output CSV File")
-	flag.Parse()
-	if !strings.HasSuffix(*outputfile, ".csv") {
-		fmt.Println(color.Colorize(color.Red, "[*] You must Enter CSV file to Export"))
-		log.Panic("Error in output file ")
+			&cli.StringFlag{
+				Name:        "output",
+				Value:       "output.csv",
+				Aliases:     []string{"o"},
+				Usage:       "Enter output csv file name  ",
+				Destination: &outputs,
+			},
+		},
+		Action: func(cCtx *cli.Context) error {
+			if domains != "" {
+				withname(domains)
+			} else if inputs != "" {
+				results = withlist(inputs, wg)
+				writeResults(results, outputs)
+			} else if pipel > 0 {
+				results = withpip()
+				writeResults(results, outputs)
+			}
+			return nil
+		},
 	}
-	// Read domain list from the specified text file.
 
-	var wg sync.WaitGroup
-	var results []DomainResult
-	if *inputfile != "" {
-		results = withlist(*inputfile, wg)
-	} else if *domainname != "" {
-		withname(*domainname)
-	} else if *pipeinsert {
-		results = withpip()
-	} else {
-		fmt.Println(color.Colorize(color.Red, "[*] Please Enter input [*]"))
-		fmt.Println(color.Colorize(color.Red, "[*] For Example : subcheck -d google.com -o output.csv [*]"))
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
-	// Write the results to the specified output CSV file.
-	writeResults(results, *outputfile)
+
 }
 
 // readDomains reads domain names from a text file and returns them as a string slice.
@@ -344,6 +381,7 @@ func isWaf(domain string) (bool, string) {
 
 // writeResults writes the results to the specified output CSV file.
 func writeResults(results []DomainResult, outputfile string) {
+
 	file, err := os.Create(outputfile)
 	if err != nil {
 		panic(err)
