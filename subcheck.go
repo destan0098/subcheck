@@ -182,7 +182,7 @@ func main() {
 			},
 			&cli.BoolFlag{
 				Name:  "pipe",
-				Usage: "Enter just one domain",
+				Usage: "Enter just from pipe line",
 				Count: &pipel,
 			},
 

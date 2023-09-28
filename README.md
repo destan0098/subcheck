@@ -57,7 +57,7 @@ COMMANDS:
 GLOBAL OPTIONS:
    --domain value, -d value  Enter just one domain
    --list value, -l value    Enter a list from text file
-   --pipe                    Enter just one domain (default: false)
+   --pipe                    Enter just from pipe line (default: false)
    --output value, -o value  Enter output csv file name   (default: "output.csv")
    --help, -h                show help
 
