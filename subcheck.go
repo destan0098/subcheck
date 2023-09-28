@@ -229,17 +229,17 @@ func readDomains(filename string) []string {
 		}
 	}(file)
 
-	var domains []string
+	var domainss []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		// Add domain names to the list.
-		domains = append(domains, scanner.Text())
+		domainss = append(domainss, scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
 
-	return domains
+	return domainss
 }
 
 // isPortOpen80 checks if port 80 is open for a domain by making an HTTP GET request.
