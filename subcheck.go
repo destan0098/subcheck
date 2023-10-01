@@ -7,6 +7,7 @@ import (
 	"github.com/TwiN/go-color"
 	"github.com/projectdiscovery/cdncheck"
 	"github.com/urfave/cli/v2"
+
 	"log"
 	"net"
 	"net/http"
