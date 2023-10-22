@@ -2,7 +2,7 @@
 ![Static Badge](https://img.shields.io/badge/Go-100%25-brightgreen)
 ## Description
 
-This Tool Check Subdomains has Open Port 80 or 443 and use cdn or not
+This Tool Check Domains and  Subdomains has Open Port 80 or 443 and use cdn or not
 
 
 
